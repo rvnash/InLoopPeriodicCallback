@@ -3,7 +3,7 @@
 //    Purpose: InLoopPeriodicCallback library implementation
 //
 //    Author: Richard Nash
-//    Version: 1.0.0
+//    Version: 1.0.2
 
 // For a description of how to use this class, see the header file and example
 // in this library.
@@ -27,20 +27,21 @@
 InLoopPeriodicCallback::InLoopPeriodicCallback(bool (*fn)(unsigned long),
                            unsigned long firstCallTime,
                            unsigned long periodTime,
-                           unsigned long retryTime )
+                           unsigned long retryTime,
+                           bool useSystemTimeInsteadofMillis )
 {
-    unsigned long now = millis();
     this->fn = fn;
     this->firstCallTime = firstCallTime;
     this->periodTime = periodTime;
     this->retryTime = retryTime;
+    this->useSystemTimeInsteadofMillis = useSystemTimeInsteadofMillis;
     init();
 }
 
 
 void InLoopPeriodicCallback::init()
 {
-  unsigned long now = millis();
+  unsigned long now = getNow();
   msLastCall = now;
   msNextCall = now + firstCallTime;
   lastCallSuccessValue = false;
@@ -48,7 +49,7 @@ void InLoopPeriodicCallback::init()
 
 int InLoopPeriodicCallback::loop()
 {
-    const unsigned long now = millis();
+    const unsigned long now = getNow();
 
     if (now - msNextCall < CALL_DIFF_WINDOW) {
         lastCallSuccessValue = fn(now);
@@ -66,13 +67,13 @@ int InLoopPeriodicCallback::loop()
 
 unsigned long InLoopPeriodicCallback::msUntilNextCall()
 {
-    const unsigned long now = millis();
+    const unsigned long now = getNow();
     return msNextCall - now;
 }
 
 unsigned long InLoopPeriodicCallback::msSinceLastCall()
 {
-    const unsigned long now = millis();
+    const unsigned long now = getNow();
     return now - msLastCall;
 }
 
@@ -80,3 +81,13 @@ bool InLoopPeriodicCallback::lastCallSuccess()
 {
     return lastCallSuccessValue;
 }
+
+unsigned long InLoopPeriodicCallback::getNow()
+{
+    if (!useSystemTimeInsteadofMillis) {
+        return millis();
+    } else {
+        return Time.now() * 1000UL;
+    }
+}
+

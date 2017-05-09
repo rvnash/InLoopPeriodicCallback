@@ -3,7 +3,7 @@
 //    Purpose: InLoopPeriodicCallback library header
 //
 //    Author: Richard Nash
-//    Version: 1.0.0
+//    Version: 1.0.2
 
 // This class provides a synchronous periodic callback to a function.
 // Often in Microcontroller programming a function needs to be called
@@ -43,6 +43,12 @@ public:
     // periodTime - The normal periodic callback timing, when fn returns success.
     // retryTime - If fn() returns false, then this time will elapse until the
     //             next call of fn()
+    // useSystemTimeInsteadofMillis - The default value of this is false, which means to use the millis() function
+    //                                for all timing. However, if you are using System.sleep modes, then the
+    //                                millis() function is not kept up to real time during sleep. Setting this
+    //                                to true will use the Timer.now() function for timing, which keeps running, even
+    //                                during sleep. Note, however, that the resolution of this timer is 1000ms per chunk,
+    //                                so all timer functions will only be accurate to 1000ms.
     // Note: All times used by this class are in milliseconds
     // Note: This construction also calls init(). On the Particle there can be
     //       a significant period of time between construction, and when
@@ -51,7 +57,13 @@ public:
     InLoopPeriodicCallback(bool (*fn)(unsigned long),
                            unsigned long firstCallTime,
                            unsigned long periodTime,
-                           unsigned long retryTime );
+                           unsigned long retryTime,
+                           bool useSystemTimeInsteadofMillis );
+                           
+    InLoopPeriodicCallback(bool (*fn)(unsigned long),
+                           unsigned long firstCallTime,
+                           unsigned long periodTime,
+                           unsigned long retryTime ): InLoopPeriodicCallback(fn,firstCallTime,periodTime,retryTime,false){};
 
     // Starts the initial timer. The first call to fn() will occur after
     // firstCallTime milliseconds. It is not necessary to call this in
@@ -71,6 +83,10 @@ public:
 
     // Returns true if the last call to fn() was a success, otherwise false.
     bool lastCallSuccess();
+    
+    // Returns now in milliseconds that this class is using. Note that this is equivalent to millis for
+    // useSystemTimeInsteadofMillis == false, and is Time.now()*1000 otherwise.
+    unsigned long getNow();
 
 private:
     bool (*fn)(unsigned long);
@@ -80,4 +96,5 @@ private:
     unsigned long msLastCall;
     unsigned long msNextCall;
     bool lastCallSuccessValue;
+    bool useSystemTimeInsteadofMillis;
 };
